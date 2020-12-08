@@ -64,8 +64,8 @@ object AddPerson {
   }
 
   def main(args: Array[String]): Unit = {
-//    write
-        read
+    //    write
+    read
   }
 
   private def read = {
@@ -74,6 +74,25 @@ object AddPerson {
     printPerson(AddressBook.parseFrom(gzipInput))
   }
 
+  /**
+   * 此处在调用了close方法后，再调用读流的方法，会导致Exception: Unexpected end of ZLIB input stream的异常
+   */
+  //  private def write = {
+  //    val addressBook = AddressBook.newBuilder()
+  //    try {
+  //      addressBook.mergeFrom(new FileInputStream("/Users/yihong.li/Documents/project/proto_study/code_data/src/data/proto_test_lyh"))
+  //    } catch {
+  //      case e: FileNotFoundException => println(": /Users/yihong.li/Documents/project/proto_study/code_data/src/data/proto_test_lyh not found.  Creating a new file.")
+  //    }
+  //    addressBook.addPeople(promptForAddress(new BufferedReader(new InputStreamReader(System.in)), System.out))
+  //    val output = new FileOutputStream("/Users/yihong.li/Documents/project/proto_study/code_data/src/data/proto_test_lyh")
+  //    val gzipoutput = new GZIPOutputStream(output)
+  //    addressBook.build().writeTo(gzipoutput)
+  //    output.close()
+  //  }
+  /**
+   *下面为正确的做法
+   */
   private def write = {
     val addressBook = AddressBook.newBuilder()
     try {
@@ -82,9 +101,8 @@ object AddPerson {
       case e: FileNotFoundException => println(": /Users/yihong.li/Documents/project/proto_study/code_data/src/data/proto_test_lyh not found.  Creating a new file.")
     }
     addressBook.addPeople(promptForAddress(new BufferedReader(new InputStreamReader(System.in)), System.out))
-    val output = new FileOutputStream("/Users/yihong.li/Documents/project/proto_study/code_data/src/data/proto_test_lyh")
-    val gzipoutput = new GZIPOutputStream(output)
+    val gzipoutput = new GZIPOutputStream(new FileOutputStream("/Users/yihong.li/Documents/project/proto_study/code_data/src/data/proto_test_lyh"))
     addressBook.build().writeTo(gzipoutput)
-    output.close()
+    gzipoutput.close()
   }
 }

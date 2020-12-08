@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+//指定包名，防止命名冲突
+package com.moji.test;
+
+//package tutorial;
+
+//指定java的包名
+option java_package = "com.moji.protobuffer";
+//指定编译成java类后的类名，如果不指定，默认按驼峰方式转换proto文件名
+option java_outer_classname = "CommonLogAndroidProtos";
+
+
+message Common {
+  // 使用required注释的字段强制需要被显示初始化，如果不显示初始化会报运行时错误
+  string uid = 1;
+
+  enum PlatformType {
+    ANDROID = 0;
+    IOS = 1;
+    WINDOWS = 2;
+  }
+  message Device {
+    string number = 1;
+    string mcc = 2;
+    string app_version = 3;
+    string width = 4;
+    string net = 5;
+    string mnc = 6;
+    string height = 7;
+    string language = 8;
+    string os_version = 9;
+    string device = 10;
+    string brand = 11;
+    string oaid = 12;
+    string ip = 13;
+    // 此处就是指定自定义的默认初始值为HOME
+    PlatformType type = 14;
+  }
+
+  message User {
+    string uid = 1;
+    string snsid = 2;
+    string vip = 3;
+  }
+
+}
+
+enum LbsType {
+  GPS = 0;
+  GCJ02 = 1;
+  DB09 = 2;
+  BEIDOU = 3;
+  GRONASS = 4;
+}
+message Location {
+  string lat = 1;
+  string lon = 2;
+  string lbstype = 3;
+  string cityid = 4;
+  string cid = 5;
+  string cdmalat = 6;
+  string cdmalon = 7;
+  string lac = 8;
+
+  // 此处就是指定自定义的默认初始值为HOME
+  LbsType type = 9;
+}
+message Params {
+  string prop1 = 1;
+}
+message CommonLogAndroid {
+  repeated Common common = 1;
+  repeated Location loc = 2;
+  repeated Params param = 3;
+}
