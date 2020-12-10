@@ -20,6 +20,7 @@ message Common {
     IOS = 1;
     WINDOWS = 2;
   }
+
   message Device {
     string number = 1;
     string mcc = 2;
@@ -43,7 +44,8 @@ message Common {
     string snsid = 2;
     string vip = 3;
   }
-
+  Device device = 2;
+  User user = 3;
 }
 
 enum LbsType {
