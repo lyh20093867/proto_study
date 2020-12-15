@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+//指定包名，防止命名冲突
+package com.moji.test;
+
+//package tutorial;
+
+//指定java的包名
+option java_package = "com.moji.protobuffer";
+//指定编译成java类后的类名，如果不指定，默认按驼峰方式转换proto文件名
+option java_outer_classname = "TestProtos";
+
+message Test {
+  string uid = 1;
+  int32 age = 2;
+}
