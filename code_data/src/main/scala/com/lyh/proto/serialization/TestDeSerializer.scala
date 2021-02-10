@@ -2,14 +2,22 @@ package com.lyh.proto.serialization
 
 import java.util
 
+import com.google.protobuf.InvalidProtocolBufferException
 import com.moji.protobuffer.TestProtos
-import org.apache.kafka.common.serialization.Serializer
+import org.apache.kafka.common.errors.SerializationException
+import org.apache.kafka.common.serialization.Deserializer
 
-class TestDeSerializer extends Serializer[TestProtos.Test] {
+class TestDeSerializer extends Deserializer[TestProtos.Test] {
+
   override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {}
 
-  override def serialize(topic: String, data: TestProtos.Test): Array[Byte] = {
-    if (data == null) null else data.toByteArray
+  override def deserialize(topic: String, data: Array[Byte]): TestProtos.Test = {
+    try {
+      TestProtos.Test.parseFrom(data)
+    } catch {
+      case e: InvalidProtocolBufferException => throw new SerializationException("Error when deserializing byte[] to string due to unsupported encoding !")
+    }
   }
+
   override def close(): Unit = {}
 }
