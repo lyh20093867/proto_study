@@ -4,28 +4,26 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 
+import java.util.HashSet;
+
 @Data
 public class AzkabanJob {
-    private @Id
-    Long id;
-    @Column("name")
+    private String id;
     private String jobName;
-    @Column("job_type_cid")
     private String jobTypeId;
     private String jobTypeName;
     private String execType;
     private String serverId;
     private String serverLocation;
     private String serverName;
-    @Column("path_locationid")
     private String pathId;
     private String pathLocation;
     private int out;
     private int in;
     private int color;
-
-
     private String dependencies;
+    private HashSet<AzkabanJob> nextNodes;
+    private HashSet<AzkabanEdge> nextEdges;
 
     @Override
     public int hashCode() {

@@ -1,6 +1,8 @@
 package com.moji.dao;
 
 import com.moji.constant.SqlConstant;
+import com.moji.pojo.AzkabanEdge;
+import com.moji.pojo.AzkabanJob;
 import com.moji.pojo.AzkabanProject;
 import com.moji.pojo.JobDataRel;
 import com.moji.pool.AbstractDataSource;
@@ -12,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 
 @Slf4j
 public class AzkabanDao {
@@ -34,8 +37,10 @@ public class AzkabanDao {
         while (res.next()) {
             buildSonParent(res, sons, parent);
         }
-        HashSet<JobDataRel> children = (HashSet) parent.keySet();
-        children.addAll(sons.keySet());
+        HashSet<JobDataRel> children = new HashSet<>(parent.keySet());
+        if (sons != null && sons.keySet() != null && sons.keySet().size() > 0) {
+            children.addAll(sons.keySet());
+        }
         HashSet<String> used = new HashSet<>();
         while (children != null && children.size() > 0) {
             children = getData(conn, sons, parent, children, used);
@@ -43,7 +48,6 @@ public class AzkabanDao {
         buildSonParentWithSameType(sons, parent, jobParent, jobSon, dataParent, dataSon);
         log.info(String.format("son_size:%s,parent_size:%s,jobParent:%s,jobSon:%s,dataParent:%s,dataSon:%s",
                 sons.size(), parent.size(), jobParent.size(), jobSon.size(), dataParent.size(), dataSon.size()));
-        int[] a = new int[2];
         HashMap<JobDataRel, HashSet<JobDataRel>>[] arr = new HashMap[2];
         arr[0] = jobParent;
         arr[1] = jobSon;
@@ -70,12 +74,12 @@ public class AzkabanDao {
                                HashMap<JobDataRel, HashSet<JobDataRel>> jobSon,
                                HashMap<JobDataRel, HashSet<JobDataRel>> dataSon,
                                String jobType) {
-        if (sons.containsKey(job)) return;
+        if (!sons.containsKey(job)) return;
         HashSet<JobDataRel> sameData = getFilterData(sons.get(job), jobType, "=");
         HashSet<JobDataRel> difData = getFilterData(sons.get(job), jobType, "!=");
         JobDataRel pre = another != null ? another : job;
         if (sameData.size() > 0) {
-            if (jobType == "job") isContainAndPut(pre, jobSon, sameData);
+            if ("job".equals(jobType.trim().toLowerCase())) isContainAndPut(pre, jobSon, sameData);
             else isContainAndPut(pre, dataSon, sameData);
         }
         if (difData.size() > 0) for (JobDataRel j : difData) getDataAndPut(pre, j, sons, jobSon, dataSon, jobType);
@@ -106,9 +110,9 @@ public class AzkabanDao {
         HashSet<JobDataRel> res = new HashSet<>();
         for (JobDataRel j : jobData) {
             if (s == "=") {
-                if (jobType == j.getJobType()) res.add(j);
+                if (jobType.trim().equals(j.getJobType().trim())) res.add(j);
             } else {
-                if (jobType != j.getJobType()) res.add(j);
+                if (!jobType.trim().equals(j.getJobType().trim())) res.add(j);
             }
 
         }
@@ -123,8 +127,12 @@ public class AzkabanDao {
             HashSet<String> newIds = getNewIds(ids, used);
             if (newIds.size() > 0) {
                 String newIdstr = getNewIdstr(newIds, ",");
+                if (newIdstr.endsWith(",")) {
+                    newIdstr = newIdstr.substring(0, newIdstr.length() - 1);
+                }
+                log.warn("【newIdstr】" + newIdstr);
                 String fatherSql = String.format(SqlConstant.FATHER_DATA_JOB_REL, newIdstr);
-                log.info("【fatherSql】" + fatherSql);
+                log.warn("【fatherSql】" + fatherSql);
                 ResultSet father = dataSource.queryBySql(conn, fatherSql);
                 while (father.next()) {
                     buildSonParent(father, sons, parent);
@@ -136,7 +144,7 @@ public class AzkabanDao {
                     buildSonParent(son, sons, parent);
                 }
                 used.addAll(newIds);
-                HashSet<JobDataRel> resData = (HashSet) parent.keySet();
+                HashSet<JobDataRel> resData = new HashSet<>(parent.keySet());
                 resData.addAll(sons.keySet());
                 return resData;
             } else return null;
@@ -146,7 +154,7 @@ public class AzkabanDao {
     private String getNewIdstr(HashSet<String> newIds, String s) {
         StringBuilder sb = new StringBuilder();
         for (String id : newIds) sb.append(id).append(s);
-        return sb.toString().substring(0, sb.length() - 1);
+        return sb.toString().substring(0, sb.toString().length() - 1);
     }
 
     private HashSet<String> getNewIds(HashSet<String> ids, HashSet<String> used) {
@@ -167,8 +175,8 @@ public class AzkabanDao {
         JobDataRel s = new JobDataRel();
         p.setJobId(res.getString(1));
         p.setJobType(res.getString(2));
-        s.setJobId(res.getString(1));
-        s.setJobType(res.getString(2));
+        s.setJobId(res.getString(3));
+        s.setJobType(res.getString(4));
         checkAndPut(sons, p, s);
         checkAndPut(parent, s, p);
     }
@@ -200,5 +208,177 @@ public class AzkabanDao {
             throwables.printStackTrace();
         }
         return project;
+    }
+
+    public HashMap<AzkabanJob, HashSet<AzkabanJob>>[] getAzkabanJobList(HashMap<JobDataRel, HashSet<JobDataRel>> jobSon,
+                                                                        HashMap<JobDataRel, HashSet<JobDataRel>> jobParent,
+                                                                        Connection conn) throws SQLException {
+        HashSet<JobDataRel> jobTotalSet = new HashSet<>();
+        jobTotalSet.addAll(jobSon.keySet());
+        jobTotalSet.addAll(jobParent.keySet());
+        for (HashSet<JobDataRel> set : jobSon.values()) jobTotalSet.addAll(set);
+        for (HashSet<JobDataRel> set : jobParent.values()) jobTotalSet.addAll(set);
+        HashMap<String, AzkabanJob> jobDataRelJobs = getAzkabanJobFromMysql(conn, jobTotalSet);
+        log.warn("【jobDataRelJobs.size】" + jobDataRelJobs.size());
+        HashMap<AzkabanJob, HashSet<AzkabanJob>> azkabanJobSons = new HashMap<>();
+        HashMap<AzkabanJob, HashSet<AzkabanJob>> azkabanJobParent = new HashMap<>();
+        for (JobDataRel p : jobSon.keySet()) {
+            HashSet<JobDataRel> sons = jobSon.get(p);
+            HashSet<AzkabanJob> sonJobs = getAzkabanJobSet(sons, jobDataRelJobs);
+            AzkabanJob parentJob = jobDataRelJobs.get(p.getJobId());
+            HashSet<AzkabanEdge> nextEdges = getAzkabanEdges(sonJobs, parentJob);
+            parentJob.setNextNodes(sonJobs);
+            parentJob.setNextEdges(nextEdges);
+            parentJob.setOut(sonJobs.size());
+            azkabanJobSons.put(parentJob, sonJobs);
+        }
+        for (JobDataRel s : jobParent.keySet()) {
+            HashSet<JobDataRel> parents = jobParent.get(s);
+            HashSet<AzkabanJob> parentJobs = getAzkabanJobSet(parents, jobDataRelJobs);
+            AzkabanJob sonJob = jobDataRelJobs.get(s.getJobId());
+            sonJob.setIn(parentJobs.size());
+            String dependcies = getDependcies(parentJobs);
+            log.warn("【dependcies】" + dependcies);
+            sonJob.setDependencies(dependcies);
+            azkabanJobParent.put(sonJob, parentJobs);
+        }
+        HashSet<AzkabanJob> leafJob = getSetByTwoSet(azkabanJobParent, azkabanJobSons, "f");
+        HashSet<AzkabanJob> oldJob = getSetByTwoSet(azkabanJobParent, azkabanJobSons, "o");
+        AzkabanJob preJob = new AzkabanJob();
+        preJob.setId("-1");
+        preJob.setJobName("flow_pre_job");
+        preJob.setJobTypeName("pre");
+        preJob.setJobTypeId("-1");
+        preJob.setOut(oldJob.size());
+        preJob.setIn(0);
+        preJob.setNextNodes(oldJob);
+        HashSet<AzkabanEdge> preNextEdges = getAzkabanEdges(oldJob, preJob);
+        preJob.setNextEdges(preNextEdges);
+        AzkabanJob postJob = new AzkabanJob();
+        postJob.setId("-1");
+        postJob.setJobName("flow_post_job");
+        postJob.setJobTypeName("post");
+        postJob.setJobTypeId("-1");
+        postJob.setIn(leafJob.size());
+        postJob.setOut(0);
+        HashSet<AzkabanJob> postSet = new HashSet<>();
+        postSet.add(postJob);
+        HashSet<AzkabanJob> preSet = new HashSet<>();
+        preSet.add(preJob);
+        for (AzkabanJob j : leafJob) azkabanJobSons.put(j, postSet);
+        for (AzkabanJob j : oldJob) azkabanJobParent.put(j, preSet);
+        log.warn("【azkabanJobSons.size】" + azkabanJobSons.size());
+        log.warn("【azkabanJobParent.size】" + azkabanJobParent.size());
+        checkRingLoop(preJob);
+        HashMap<AzkabanJob, HashSet<AzkabanJob>>[] returnData = new HashMap[3];
+        returnData[0] = azkabanJobSons;
+        returnData[1] = azkabanJobParent;
+        HashMap<AzkabanJob, HashSet<AzkabanJob>> preJobMap = new HashMap<>();
+        HashSet<AzkabanJob> preJobSet = new HashSet<>();
+        preJobSet.add(preJob);
+        preJobMap.put(preJob, preJobSet);
+        returnData[2] = preJobMap;
+        return returnData;
+    }
+
+    private String getDependcies(HashSet<AzkabanJob> parentJobs) {
+        StringBuilder sb = new StringBuilder();
+        for (AzkabanJob j : parentJobs) sb.append(j.getJobName()).append(",");
+        return sb.toString().substring(0, sb.toString().length() - 1);
+    }
+
+    private void checkRingLoop(AzkabanJob preJob) {
+        AzkabanJob loopNode = null;
+        boolean hasLoop = hasRingLoopNode(preJob, preJob, loopNode);
+        log.warn("【hasLoop】" + hasLoop);
+        if (hasLoop && loopNode != null) {
+            log.error("任务存在环,请重新配置：");
+            StringBuilder sb = new StringBuilder();
+            printNode(sb, loopNode);
+            log.error(sb.toString());
+            System.exit(2);
+        }
+    }
+
+    private void printNode(StringBuilder sb, AzkabanJob job) {
+        if (job != null && job.getNextNodes() != null && job.getNextNodes().size() != 0) {
+            sb.append(job.getJobName()).append("->");
+            if (job.getColor() == 4) job.setColor(5);
+            else job.setColor(4);
+            for (AzkabanJob j : job.getNextNodes()) {
+                if (j.getColor() != 5) printNode(sb, j);
+            }
+        }
+    }
+
+    private boolean hasRingLoopNode(AzkabanJob next, AzkabanJob pre, AzkabanJob loopNode) {
+        boolean res = false;
+        if (next == null) return false;
+        next.setColor(1);
+        for (AzkabanJob j : next.getNextNodes()) {
+            if (j.getColor() != 1) res = (res || hasRingLoopNode(j, next, loopNode));
+            else if (j != pre && j.getNextNodes().size() != 0) {
+                res = true;
+                loopNode = j;
+            }
+        }
+        return res;
+    }
+
+    private HashSet<AzkabanJob> getSetByTwoSet(HashMap<AzkabanJob, HashSet<AzkabanJob>> azkabanJobParent,
+                                               HashMap<AzkabanJob, HashSet<AzkabanJob>> azkabanJobSons,
+                                               String f) {
+        HashSet<AzkabanJob> res = new HashSet<>();
+        if ("f".equals(f)) {
+            for (AzkabanJob j : azkabanJobParent.keySet()) if (!azkabanJobSons.containsKey(j)) res.add(j);
+        } else {
+            for (AzkabanJob j : azkabanJobSons.keySet()) if (!azkabanJobParent.containsKey(j)) res.add(j);
+        }
+        return res;
+    }
+
+    private HashSet<AzkabanEdge> getAzkabanEdges(HashSet<AzkabanJob> sonJobs, AzkabanJob p) {
+        HashSet<AzkabanEdge> res = new HashSet<>();
+        for (AzkabanJob j : sonJobs) {
+            AzkabanEdge e = new AzkabanEdge();
+            e.setFromJobId(p.getId());
+            e.setFromJobName(p.getJobName());
+            e.setToJobId(j.getId());
+            e.setToJobName(j.getJobName());
+            res.add(e);
+        }
+        return res;
+    }
+
+    private HashSet<AzkabanJob> getAzkabanJobSet(HashSet<JobDataRel> sons, HashMap<String, AzkabanJob> azkaBanJobDataRelDatas) {
+        HashSet<AzkabanJob> res = new HashSet<>();
+        for (JobDataRel j : sons) res.add(azkaBanJobDataRelDatas.get(j.getJobId()));
+        return res;
+    }
+
+    private HashMap<String, AzkabanJob> getAzkabanJobFromMysql(Connection conn,
+                                                               HashSet<JobDataRel> jobTotalSet) throws SQLException {
+        HashSet<String> ids = getIds(jobTotalSet);
+        String idStr = getNewIdstr(ids, ",");
+        log.warn("【idStr】" + idStr);
+        String sql = String.format(SqlConstant.AZKABAN_JOB, idStr);
+        log.warn("【azkabanSql】" + sql);
+        ResultSet res = dataSource.queryBySql(conn, sql);
+        HashMap<String, AzkabanJob> azkabanJobMap = new HashMap<String, AzkabanJob>();
+        while (res.next()) {
+            String jobId = res.getString(1);
+            AzkabanJob job = new AzkabanJob();
+            job.setId(jobId);
+            job.setJobName(res.getString(2));
+            job.setJobTypeId(res.getString(3));
+            job.setJobTypeName(res.getString(4));
+            job.setServerId(res.getString(5));
+            job.setServerLocation(res.getString(6));
+            job.setPathId(res.getString(7));
+            job.setPathLocation(res.getString(8));
+            job.setServerName(res.getString(9));
+            azkabanJobMap.put(jobId, job);
+        }
+        return azkabanJobMap;
     }
 }

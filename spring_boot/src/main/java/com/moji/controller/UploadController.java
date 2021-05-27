@@ -3,6 +3,8 @@ package com.moji.controller;
 
 import com.moji.constant.SqlConstant;
 import com.moji.dao.AzkabanDao;
+import com.moji.help.AzkabanHelper;
+import com.moji.pojo.AzkabanJob;
 import com.moji.pojo.AzkabanProject;
 import com.moji.pojo.JobDataRel;
 import com.moji.pool.impl.TestDataSource;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -49,14 +52,41 @@ public class UploadController {
      * @throws Exception
      */
     @RequestMapping("/azkb/proj/upload")
-    public String upload(@RequestParam(value = "projectId", defaultValue = "47") Integer projectId) throws Exception {
-        Connection conn = dataSource.getConnection();
-        AzkabanDao dao = new AzkabanDao(dataSource);
-        AzkabanProject project = dao.getProjectById(projectId, conn);
-        dao.getDataJobRel(projectId, conn);
-        System.out.println(projectId);
-        System.out.println(project);
-        return "";
+    public String upload(@RequestParam(value = "projectId", defaultValue = "47") Integer projectId) {
+        String res;
+        Connection conn = null;
+        try {
+            conn = dataSource.getConnection();
+            AzkabanDao dao = new AzkabanDao(dataSource);
+            AzkabanProject project = dao.getProjectById(projectId, conn);
+            log.info("【project】" + project);
+            HashMap<JobDataRel, HashSet<JobDataRel>>[] dataJobRel = dao.getDataJobRel(projectId, conn);
+            HashMap<JobDataRel, HashSet<JobDataRel>> jobParent = dataJobRel[0];
+            HashMap<JobDataRel, HashSet<JobDataRel>> jobSon = dataJobRel[1];
+            HashMap<AzkabanJob, HashSet<AzkabanJob>>[] azkabanData = dao.getAzkabanJobList(jobSon, jobParent, conn);
+//            HashMap<AzkabanJob, HashSet<AzkabanJob>> azkabanJobSons = azkabanData[0];
+//            HashMap<AzkabanJob, HashSet<AzkabanJob>> azkabanJobParent = azkabanData[1];
+            HashMap<AzkabanJob, HashSet<AzkabanJob>> preJob = azkabanData[2];
+            AzkabanHelper helper = new AzkabanHelper();
+            String message = helper.uploadProjectFile(project, preJob.keySet());
+            log.warn(message);
+            res = "success";
+        } catch (SQLException throwables) {
+            res = throwables.getMessage();
+            throwables.printStackTrace();
+        } catch (IOException e) {
+            res = e.getMessage();
+            e.printStackTrace();
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                }
+            }
+        }
+        return res;
     }
 
 }
