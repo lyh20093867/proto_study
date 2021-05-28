@@ -28,11 +28,7 @@ public class ZipUtils {
         } else {
             ZipEntry zipEntry = new ZipEntry(path + (path.length() > 0 ? "/" : "") + input.getName());
             zOut.putNextEntry(zipEntry);
-            try {
-                IOUtils.copy(new BufferedInputStream(new FileInputStream(input)), zOut);
-            } finally {
-                zOut.close();
-            }
+            IOUtils.copy(new BufferedInputStream(new FileInputStream(input)), zOut);
         }
     }
 

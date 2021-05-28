@@ -13,7 +13,6 @@ abstract public class AbstractDataSource {
     protected HikariDataSource bigDataMojiDataSource = new HikariDataSource();
 
     protected HikariDataSource getDataSource() {
-        initSource();
         return bigDataMojiDataSource;
     }
 

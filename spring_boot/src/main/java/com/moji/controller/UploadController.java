@@ -3,6 +3,7 @@ package com.moji.controller;
 
 import com.moji.constant.SqlConstant;
 import com.moji.dao.AzkabanDao;
+import com.moji.exception.RingLoopException;
 import com.moji.help.AzkabanHelper;
 import com.moji.pojo.AzkabanJob;
 import com.moji.pojo.AzkabanProject;
@@ -59,7 +60,7 @@ public class UploadController {
             conn = dataSource.getConnection();
             AzkabanDao dao = new AzkabanDao(dataSource);
             AzkabanProject project = dao.getProjectById(projectId, conn);
-            log.info("【project】" + project);
+            log.debug("【project】" + project);
             HashMap<JobDataRel, HashSet<JobDataRel>>[] dataJobRel = dao.getDataJobRel(projectId, conn);
             HashMap<JobDataRel, HashSet<JobDataRel>> jobParent = dataJobRel[0];
             HashMap<JobDataRel, HashSet<JobDataRel>> jobSon = dataJobRel[1];
@@ -69,8 +70,11 @@ public class UploadController {
             HashMap<AzkabanJob, HashSet<AzkabanJob>> preJob = azkabanData[2];
             AzkabanHelper helper = new AzkabanHelper();
             String message = helper.uploadProjectFile(project, preJob.keySet());
-            log.warn(message);
-            res = "success";
+            log.debug(message);
+            res = message;
+        } catch (RingLoopException ex) {
+            res = ex.getMessage();
+            ex.printStackTrace();
         } catch (SQLException throwables) {
             res = throwables.getMessage();
             throwables.printStackTrace();
