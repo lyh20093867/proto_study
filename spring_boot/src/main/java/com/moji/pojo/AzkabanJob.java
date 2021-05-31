@@ -24,6 +24,8 @@ public class AzkabanJob {
     private String dependencies;
     private HashSet<AzkabanJob> nextNodes;
     private HashSet<AzkabanEdge> nextEdges;
+    private String context;
+    private int hasAtt;
 
     @Override
     public int hashCode() {

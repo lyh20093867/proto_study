@@ -29,12 +29,12 @@ public class AzkabanHelper {
     public String generateProjectZipFile(AzkabanProject project, AzkabanJob preJob) throws IOException {
         String sourceDirPath = project.getEntryHome() + "/temp";
         String finalJobDirPath = project.getEntryHome() + "/final";
-        log.debug("【sourceDirPath】" + sourceDirPath);
-        log.debug("【finalJobDirPath】" + finalJobDirPath);
+        log.warn("【sourceDirPath】" + sourceDirPath);
+        log.warn("【finalJobDirPath】" + finalJobDirPath);
         File sourceZipDir = new File(sourceDirPath);
         if (sourceZipDir.exists()) {
             String rmCommand = String.format("rm -r %s", sourceDirPath);
-            log.debug("【rmCommand】" + rmCommand);
+            log.warn("【rmCommand】" + rmCommand);
             exector.exec(rmCommand);
         }
         sourceZipDir.mkdir();
@@ -60,42 +60,56 @@ public class AzkabanHelper {
 
     private void generateJobFile(AzkabanJob job, File sourceZipDir, AzkabanProject project) {
         String typeName = job.getJobTypeName().toLowerCase();
-        if (typeName != "pre" && typeName != "post") {
-            String jobName = job.getJobName();
-            File jobFile = new File(sourceZipDir + "/" + jobName + ".job");
-            BufferedWriter bw = null;
-            try {
-                bw = new BufferedWriter(new FileWriter(jobFile));
-                bw.write("type=command");
-
-                bw.newLine();
-                if (typeName == "timer_trigger") {
-                    String timer_trigger_command = String.format("comman=%s/%s_task.sh %s ${azkaban.flow.projectid} ${azkaban.flow.flowid} ${azkaban.flow.execid}",
-                            project.getEntryHome(), typeName, jobName);
-                    log.debug("【timer_trigger_command】" + timer_trigger_command);
-                    bw.write(timer_trigger_command);
-                } else {
-                    String jobCommand = String.format("command=sh +x %s/entry_sh.sh %s %s %s/agent.sh %s %s %s ${azkaban.flow.projectid} ${azkaban.flow.flowid} ${azkaban.flow.execid}",
-                            project.getEntryHome(), job.getServerLocation(), project.getAgentHome(), job.getPathLocation(), jobName, project.getProjectExecFrequency(), job.getServerName());
-                    log.debug(String.format("【%s_jobCommand】%s", jobName, jobCommand));
-                    bw.write(jobCommand);
+        String jobName = job.getJobName();
+        String projectName = project.getProjectName();
+        File jobFile = new File(sourceZipDir + "/" + jobName + ".job");
+        BufferedWriter bw = null;
+        try {
+            bw = new BufferedWriter(new FileWriter(jobFile));
+            bw.write("type=command");
+            bw.newLine();
+            if (typeName == "pre") {
+                String preJobCommand = String.format("command=sh +x %s/pre.sh --self_active '%s' --last_succ_exec_begin_dt '%s' --self_start_dt '%s' --self_end_dt '%s'",
+                        project.getAgentHome(), project.getSelfActive(), project.getLastSuccExecBeginDt(), project.getSelfBeginDt(), project.getSelfEndDt());
+                log.warn(String.format("【%s_preJobCommand】%s", projectName, preJobCommand));
+                bw.write(preJobCommand);
+            } else if (typeName == "post") {
+                String postJobCommand = String.format("command=sh +x %s/post.sh --self_active '%s'", project.getAgentHome(), project.getSelfActive());
+                log.warn(String.format("【%s_postJobCommand】%s", projectName, postJobCommand));
+                bw.write(postJobCommand);
+            } else if (typeName == "timer_trigger") {
+                String timerTriggerCommand = String.format("command=%s/%s_task.sh '%s' ${azkaban.flow.projectid} ${azkaban.flow.flowid} ${azkaban.flow.execid}",
+                        project.getAgentHome(), typeName, jobName);
+                log.warn("【timer_trigger_command】" + timerTriggerCommand);
+                bw.write(timerTriggerCommand);
+            } else {
+                String context = job.getContext();
+                String jobCommand = null;
+                if (context != null && !context.trim().equals("")) {
+                    jobCommand = String.format("command=sh +x %s/entry_sh.sh --script '%s' --server_location '%s' --path_location '%s' --agent_location %s/agent.sh --job_name '%s' --project_exec_frequency '%s' --server_name '%s' --projectid ${azkaban.flow.projectid} --flowid ${azkaban.flow.flowid} --execid ${azkaban.flow.execid}",
+                            project.getAgentHome(),job.getContext(), job.getServerLocation(), job.getPathLocation(), project.getAgentHome(), jobName, project.getProjectExecFrequency(), job.getServerName());
+                } else{
+                    jobCommand = String.format("command=sh +x %s/entry_sh.sh --server_location '%s' --path_location '%s' %s/agent.sh --job_name '%s' --project_exec_frequency '%s' --server_name '%s' --projectid ${azkaban.flow.projectid} --flowid ${azkaban.flow.flowid} --execid ${azkaban.flow.execid}",
+                            project.getAgentHome(), job.getServerLocation(), job.getPathLocation(), project.getAgentHome(), jobName, project.getProjectExecFrequency(), job.getServerName());
                 }
-                bw.newLine();
-                String dep = job.getDependencies();
-                if (dep != null && dep != "") {
-                    String depStr = String.format("dependencies=%s", dep);
-                    log.debug(String.format("【%s_dependencies】%s", jobName, depStr));
-                    bw.write(depStr);
-                }
-                bw.flush();
+                log.warn(String.format("【%s_jobCommand】%s", jobName, jobCommand));
+                bw.write(jobCommand);
+            }
+            bw.newLine();
+            String dep = job.getDependencies();
+            if (dep != null && dep != "") {
+                String depStr = String.format("dependencies=%s", dep);
+                log.warn(String.format("【%s_dependencies】%s", jobName, depStr));
+                bw.write(depStr);
+            }
+            bw.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (bw != null) try {
+                bw.close();
             } catch (IOException e) {
                 e.printStackTrace();
-            } finally {
-                if (bw != null) try {
-                    bw.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
             }
         }
     }
@@ -138,11 +152,11 @@ public class AzkabanHelper {
     public String uploadProjectFile(AzkabanProject project, Set<AzkabanJob> keySet) throws IOException {
         AzkabanJob preJob = null;
         for (AzkabanJob j : keySet) preJob = j;
-        log.debug("【preJob】" + preJob);
+        log.warn("【preJob】" + preJob);
         String projectZipFile = generateProjectZipFile(project, preJob);
         Config baseConf = ConfigFactory.load(AzkabanConstant.AKABAN_CONIF_FILE_NAME).getConfig(AzkabanConstant.ENV_AZKABAN);
         String sessionId = getAzkabanSessionId(baseConf);
-        log.debug("【sessionId】" + sessionId);
+        log.warn("【sessionId】" + sessionId);
         createProject(sessionId, project.getProjectName(), baseConf);
         return uploadProjectFile(sessionId, projectZipFile, project.getProjectName(), baseConf);
     }
@@ -161,7 +175,7 @@ public class AzkabanHelper {
             return error;
         } else {
             String sessionId = resJosn.getString("session.id");
-            log.debug("【sessionId】" + sessionId);
+            log.warn("【sessionId】" + sessionId);
             return sessionId;
         }
     }
@@ -196,7 +210,7 @@ public class AzkabanHelper {
         System.out.println(execString);
         JSONObject resJosn = JSON.parseObject(execString.substring(execString.indexOf("{")));
         String status = resJosn.getString("status");
-        log.debug("【status】" + status);
+        log.warn("【status】" + status);
         if (status.trim().equals("error")) {
             log.error("【create_error】" + resJosn.getString("message"));
         }
