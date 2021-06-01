@@ -1,9 +1,9 @@
 package com.moji.help;
 
-import ch.qos.logback.core.util.LocationUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.moji.constant.AzkabanConstant;
+import com.moji.exception.JSONParseErrorException;
 import com.moji.pojo.AzkabanJob;
 import com.moji.pojo.AzkabanProject;
 import com.moji.utils.LocalExectionUtils;
@@ -29,12 +29,12 @@ public class AzkabanHelper {
     public String generateProjectZipFile(AzkabanProject project, AzkabanJob preJob) throws IOException {
         String sourceDirPath = project.getEntryHome() + "/temp";
         String finalJobDirPath = project.getEntryHome() + "/final";
-        log.warn("【sourceDirPath】" + sourceDirPath);
-        log.warn("【finalJobDirPath】" + finalJobDirPath);
+        log.info("【sourceDirPath】" + sourceDirPath);
+        log.info("【finalJobDirPath】" + finalJobDirPath);
         File sourceZipDir = new File(sourceDirPath);
         if (sourceZipDir.exists()) {
             String rmCommand = String.format("rm -r %s", sourceDirPath);
-            log.warn("【rmCommand】" + rmCommand);
+            log.info("【rmCommand】" + rmCommand);
             exector.exec(rmCommand);
         }
         sourceZipDir.mkdir();
@@ -69,37 +69,37 @@ public class AzkabanHelper {
             bw.write("type=command");
             bw.newLine();
             if (typeName == "pre") {
-                String preJobCommand = String.format("command=sh +x %s/pre.sh --self_active '%s' --last_succ_exec_begin_dt '%s' --self_start_dt '%s' --self_end_dt '%s'",
-                        project.getAgentHome(), project.getSelfActive(), project.getLastSuccExecBeginDt(), project.getSelfBeginDt(), project.getSelfEndDt());
-                log.warn(String.format("【%s_preJobCommand】%s", projectName, preJobCommand));
+                String preJobCommand = String.format("command=sh +x %s/pre.sh --project_name '%s' --step '%s' --project_exec_frequency '%s' --self_active '%s' --last_succ_exec_begin_dt '%s' --self_start_dt '%s' --self_end_dt '%s'",
+                        project.getAgentHome(),project.getProjectName(),project.getStep(),project.getProjectExecFrequency(), project.getSelfActive(), project.getLastSuccExecBeginDt(), project.getSelfBeginDt(), project.getSelfEndDt());
+                log.info(String.format("【%s_preJobCommand】%s", projectName, preJobCommand));
                 bw.write(preJobCommand);
             } else if (typeName == "post") {
-                String postJobCommand = String.format("command=sh +x %s/post.sh --self_active '%s'", project.getAgentHome(), project.getSelfActive());
-                log.warn(String.format("【%s_postJobCommand】%s", projectName, postJobCommand));
+                String postJobCommand = String.format("command=sh +x %s/post.sh --self_active '%s' --execid ${azkaban.flow.execid} --project_name '%s'", project.getAgentHome(), project.getSelfActive(),project.getProjectName());
+                log.info(String.format("【%s_postJobCommand】%s", projectName, postJobCommand));
                 bw.write(postJobCommand);
             } else if (typeName == "timer_trigger") {
                 String timerTriggerCommand = String.format("command=%s/%s_task.sh '%s' ${azkaban.flow.projectid} ${azkaban.flow.flowid} ${azkaban.flow.execid}",
                         project.getAgentHome(), typeName, jobName);
-                log.warn("【timer_trigger_command】" + timerTriggerCommand);
+                log.info("【timer_trigger_command】" + timerTriggerCommand);
                 bw.write(timerTriggerCommand);
             } else {
                 String context = job.getContext();
                 String jobCommand = null;
                 if (context != null && !context.trim().equals("")) {
-                    jobCommand = String.format("command=sh +x %s/entry_sh.sh --script '%s' --server_location '%s' --path_location '%s' --agent_location %s/agent.sh --job_name '%s' --project_exec_frequency '%s' --server_name '%s' --projectid ${azkaban.flow.projectid} --flowid ${azkaban.flow.flowid} --execid ${azkaban.flow.execid}",
-                            project.getAgentHome(),job.getContext(), job.getServerLocation(), job.getPathLocation(), project.getAgentHome(), jobName, project.getProjectExecFrequency(), job.getServerName());
-                } else{
-                    jobCommand = String.format("command=sh +x %s/entry_sh.sh --server_location '%s' --path_location '%s' %s/agent.sh --job_name '%s' --project_exec_frequency '%s' --server_name '%s' --projectid ${azkaban.flow.projectid} --flowid ${azkaban.flow.flowid} --execid ${azkaban.flow.execid}",
+                    jobCommand = String.format("command=sh +x %s/entry_sh.sh --script '%s' --server_location '%s' --path_location '%s' --agent_location %s/agent.sh --job_name '%s' --project_exec_frequency '%s' --server_name '%s' --start_dt '${start_dt}' --end_dt '${end_dt}' --projectid ${azkaban.flow.projectid} --flowid ${azkaban.flow.flowid} --execid ${azkaban.flow.execid}",
+                            project.getAgentHome(), job.getContext(), job.getServerLocation(), job.getPathLocation(), project.getAgentHome(), jobName, project.getProjectExecFrequency(), job.getServerName());
+                } else {
+                    jobCommand = String.format("command=sh +x %s/entry_sh.sh --server_location '%s' --path_location '%s' %s/agent.sh --job_name '%s' --project_exec_frequency '%s' --server_name '%s' --start_dt '${start_dt}' --end_dt '${end_dt}' --projectid ${azkaban.flow.projectid} --flowid ${azkaban.flow.flowid} --execid ${azkaban.flow.execid}",
                             project.getAgentHome(), job.getServerLocation(), job.getPathLocation(), project.getAgentHome(), jobName, project.getProjectExecFrequency(), job.getServerName());
                 }
-                log.warn(String.format("【%s_jobCommand】%s", jobName, jobCommand));
+                log.info(String.format("【%s_jobCommand】%s", jobName, jobCommand));
                 bw.write(jobCommand);
             }
             bw.newLine();
             String dep = job.getDependencies();
             if (dep != null && dep != "") {
                 String depStr = String.format("dependencies=%s", dep);
-                log.warn(String.format("【%s_dependencies】%s", jobName, depStr));
+                log.info(String.format("【%s_dependencies】%s", jobName, depStr));
                 bw.write(depStr);
             }
             bw.flush();
@@ -137,6 +137,10 @@ public class AzkabanHelper {
             bw.newLine();
             bw.write(String.format("self_active=%s", project.getSelfActive()));
             bw.newLine();
+            bw.write(String.format("step=%s", project.getStep()));
+            bw.newLine();
+            bw.write(String.format("status=%s", project.getStatus()));
+            bw.newLine();
             bw.flush();
         } catch (IOException e) {
             e.printStackTrace();
@@ -149,38 +153,41 @@ public class AzkabanHelper {
         }
     }
 
-    public String uploadProjectFile(AzkabanProject project, Set<AzkabanJob> keySet) throws IOException {
+    public String uploadProjectFile(AzkabanProject project, Set<AzkabanJob> keySet) throws IOException, JSONParseErrorException {
         AzkabanJob preJob = null;
         for (AzkabanJob j : keySet) preJob = j;
-        log.warn("【preJob】" + preJob);
+        log.info("【preJob】" + preJob);
         String projectZipFile = generateProjectZipFile(project, preJob);
         Config baseConf = ConfigFactory.load(AzkabanConstant.AKABAN_CONIF_FILE_NAME).getConfig(AzkabanConstant.ENV_AZKABAN);
         String sessionId = getAzkabanSessionId(baseConf);
-        log.warn("【sessionId】" + sessionId);
+        log.info("【sessionId】" + sessionId);
+        /**
+         * @TODO 此处在正式环境中需要移除，不应该有createProject
+         */
         createProject(sessionId, project.getProjectName(), baseConf);
         return uploadProjectFile(sessionId, projectZipFile, project.getProjectName(), baseConf);
     }
 
-    private String getAzkabanSessionId(Config baseConf) {
+    private String getAzkabanSessionId(Config baseConf) throws JSONParseErrorException {
         String loginCommand = baseConf.getString(AzkabanConstant.AZKABAN_AUTH_CMD)
                 .replace("{USER}", baseConf.getString(AzkabanConstant.AZKABAN_USER))
                 .replace("{PASSWORD}", baseConf.getString(AzkabanConstant.AZKABAN_PASSWORD))
                 .replace("{IP}", baseConf.getString(AzkabanConstant.AZKABAN_IP))
                 .replace("{PORT}", baseConf.getString(AzkabanConstant.AZKABAN_PORT));
         String execString = exector.exec(loginCommand);
-        JSONObject resJosn = JSON.parseObject(execString.substring(execString.indexOf("{")));
+        JSONObject resJosn = parseJsonString(execString);
         if (resJosn.containsKey("error")) {
             String error = resJosn.getString("error");
             log.error("【login_error】" + error);
             return error;
         } else {
             String sessionId = resJosn.getString("session.id");
-            log.warn("【sessionId】" + sessionId);
+            log.info("【sessionId】" + sessionId);
             return sessionId;
         }
     }
 
-    private String uploadProjectFile(String sessionId, String projectZipFile, String projectName, Config baseConf) {
+    private String uploadProjectFile(String sessionId, String projectZipFile, String projectName, Config baseConf) throws JSONParseErrorException {
         String uploadCommand = baseConf.getString(AzkabanConstant.AZKABAN_UPLOAD_CMD)
                 .replace("{PROJECTNAME}", projectName)
                 .replace("{SESSIONID}", sessionId)
@@ -188,7 +195,7 @@ public class AzkabanHelper {
                 .replace("{IP}", baseConf.getString(AzkabanConstant.AZKABAN_IP))
                 .replace("{PORT}", baseConf.getString(AzkabanConstant.AZKABAN_PORT));
         String execString = exector.exec(uploadCommand);
-        JSONObject resJosn = JSON.parseObject(execString.substring(execString.indexOf("{")));
+        JSONObject resJosn = parseJsonString(execString);
         String result = "";
         if (resJosn.containsKey("error"))
             result = String.format("【upload_error】error_message:%s", resJosn.getString("error"));
@@ -197,7 +204,20 @@ public class AzkabanHelper {
         return result;
     }
 
-    private String createProject(String sessionId, String projectName, Config baseConf) {
+    private JSONObject parseJsonString(String execString) throws JSONParseErrorException {
+        JSONObject res = null;
+        String logs = execString.substring(execString.indexOf("{"));
+        log.info("【exec_result】" + logs);
+        try {
+            res = JSON.parseObject(logs);
+        } catch (Exception e) {
+            JSONParseErrorException ex = new JSONParseErrorException(String.format("【JSON_ERROR】message:%s,log:%s", e.getMessage(), logs));
+            throw ex;
+        }
+        return res;
+    }
+
+    private String createProject(String sessionId, String projectName, Config baseConf) throws JSONParseErrorException {
         String ip = baseConf.getString(AzkabanConstant.AZKABAN_IP);
         String port = baseConf.getString(AzkabanConstant.AZKABAN_PORT);
         String createCommand = baseConf.getString(AzkabanConstant.AZKABAN_CREATE_PROJECT_CMD)
@@ -208,21 +228,13 @@ public class AzkabanHelper {
                 .replace("{PORT}", port);
         String execString = exector.exec(createCommand);
         System.out.println(execString);
-        JSONObject resJosn = JSON.parseObject(execString.substring(execString.indexOf("{")));
+        JSONObject resJosn = parseJsonString(execString);
         String status = resJosn.getString("status");
-        log.warn("【status】" + status);
+        log.info("【status】" + status);
         if (status.trim().equals("error")) {
             log.error("【create_error】" + resJosn.getString("message"));
         }
         return status;
-
-    }
-
-    public static void main(String[] args) {
-        Config baseConf = ConfigFactory.load(AzkabanConstant.AKABAN_CONIF_FILE_NAME).getConfig(AzkabanConstant.ENV_AZKABAN);
-        AzkabanHelper h = new AzkabanHelper();
-        String sessionId = h.getAzkabanSessionId(baseConf);
-        h.createProject(sessionId, "test_lyh_a", baseConf);
 
     }
 
