@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>proto_study</artifactId>
+        <groupId>com.lyh</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>code_data</artifactId>
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <!--        <scala.version>2.11.12</scala.version>-->
+        <scala.version>2.12.12</scala.version>
+        <!--        <scala.compat.version>2.11</scala.compat.version>-->
+        <scala.compat.version>2.12</scala.compat.version>
+        <!--        <spark.version>2.4.2</spark.version>-->
+        <spark.version>3.0.1</spark.version>
+        <kafka.version>1.1.1</kafka.version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>com.lyh</groupId>
+            <artifactId>proto_file</artifactId>
+            <version>1.0</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.apache.kafka/kafka-clients -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>${kafka.version}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.kafka/kafka -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka_${scala.compat.version}</artifactId>
+            <version>${kafka.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>metrics-core</artifactId>
+                    <groupId>com.yammer.metrics</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>scala-logging_2.11</artifactId>
+                    <groupId>com.typesafe.scala-logging</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>zkclient</artifactId>
+                    <groupId>com.101tec</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>zookeeper</artifactId>
+                    <groupId>org.apache.zookeeper</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!--        &lt;!&ndash; https://mvnrepository.com/artifact/org.apache.spark/spark-streaming-kafka-0-10 &ndash;&gt;-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.apache.spark</groupId>-->
+        <!--            <artifactId>spark-streaming-kafka-0-10_2.11</artifactId>-->
+        <!--            <version>${spark.version}</version>-->
+        <!--            <scope>provided</scope>-->
+        <!--        </dependency>-->
+                <dependency>
+                    <groupId>org.apache.spark</groupId>
+                    <artifactId>spark-sql-kafka-0-10_${scala.compat.version}</artifactId>
+                    <version>${spark.version}</version>
+                    <scope>provided</scope>
+                </dependency>
+        <!--        <dependency>-->
+        <!--            <groupId>com.lyh</groupId>-->
+        <!--            <artifactId>proto_file</artifactId>-->
+        <!--            <version>1.0</version>-->
+        <!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.scala-lang</groupId>-->
+        <!--            <artifactId>scala-library</artifactId>-->
+        <!--            <version>${scala.version}</version>-->
+        <!--            &lt;!&ndash;            <scope>provided</scope>&ndash;&gt;-->
+        <!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.scala-lang</groupId>-->
+        <!--            <artifactId>scala-reflect</artifactId>-->
+        <!--            <version>${scala.version}</version>-->
+        <!--            &lt;!&ndash;            <scope>provided</scope>&ndash;&gt;-->
+        <!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.apache.spark</groupId>-->
+        <!--            <artifactId>spark-core_${scala.compat.version}</artifactId>-->
+        <!--            <version>${spark.version}</version>-->
+        <!--            <exclusions>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>hadoop-common</artifactId>-->
+        <!--                    <groupId>org.apache.hadoop</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>hadoop-hdfs</artifactId>-->
+        <!--                    <groupId>org.apache.hadoop</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>hadoop-yarn-server-common</artifactId>-->
+        <!--                    <groupId>org.apache.hadoop</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>hadoop-mapreduce-client-common</artifactId>-->
+        <!--                    <groupId>org.apache.hadoop</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>hadoop-mapreduce-client-shuffle</artifactId>-->
+        <!--                    <groupId>org.apache.hadoop</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>hadoop-mapreduce-client-app</artifactId>-->
+        <!--                    <groupId>org.apache.hadoop</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>hadoop-yarn-api</artifactId>-->
+        <!--                    <groupId>org.apache.hadoop</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>hadoop-yarn-common</artifactId>-->
+        <!--                    <groupId>org.apache.hadoop</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>hadoop-mapreduce-client-core</artifactId>-->
+        <!--                    <groupId>org.apache.hadoop</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>hadoop-mapreduce-client-jobclient</artifactId>-->
+        <!--                    <groupId>org.apache.hadoop</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>spark-network-common_2.11</artifactId>-->
+        <!--                    <groupId>org.apache.spark</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>jackson-module-scala_2.11</artifactId>-->
+        <!--                    <groupId>com.fasterxml.jackson.module</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>spark-kvstore_2.11</artifactId>-->
+        <!--                    <groupId>org.apache.spark</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>metrics-json</artifactId>-->
+        <!--                    <groupId>io.dropwizard.metrics</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>jackson-databind</artifactId>-->
+        <!--                    <groupId>com.fasterxml.jackson.core</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>paranamer</artifactId>-->
+        <!--                    <groupId>com.thoughtworks.paranamer</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>curator-client</artifactId>-->
+        <!--                    <groupId>org.apache.curator</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>curator-framework</artifactId>-->
+        <!--                    <groupId>org.apache.curator</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>curator-recipes</artifactId>-->
+        <!--                    <groupId>org.apache.curator</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>zookeeper</artifactId>-->
+        <!--                    <groupId>org.apache.zookeeper</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>avro</artifactId>-->
+        <!--                    <groupId>org.apache.avro</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>avro-ipc</artifactId>-->
+        <!--                    <groupId>org.apache.avro</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>jcl-over-slf4j</artifactId>-->
+        <!--                    <groupId>org.slf4j</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>jul-to-slf4j</artifactId>-->
+        <!--                    <groupId>org.slf4j</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>slf4j-log4j12</artifactId>-->
+        <!--                    <groupId>org.slf4j</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>metrics-core</artifactId>-->
+        <!--                    <groupId>io.dropwizard.metrics</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>metrics-jvm</artifactId>-->
+        <!--                    <groupId>io.dropwizard.metrics</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>avro-mapred</artifactId>-->
+        <!--                    <groupId>org.apache.avro</groupId>-->
+        <!--                </exclusion>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>metrics-graphite</artifactId>-->
+        <!--                    <groupId>io.dropwizard.metrics</groupId>-->
+        <!--                </exclusion>-->
+        <!--            </exclusions>-->
+        <!--        </dependency>-->
+        <!--        &lt;!&ndash; https://mvnrepository.com/artifact/com.github.os72/protoc-jar-maven-plugin &ndash;&gt;-->
+        <!--        <dependency>-->
+        <!--            <groupId>com.github.os72</groupId>-->
+        <!--            <artifactId>protoc-jar-maven-plugin</artifactId>-->
+        <!--            <version>3.10.1</version>-->
+        <!--            <exclusions>-->
+        <!--                <exclusion>-->
+        <!--                    <artifactId>plexus-build-api</artifactId>-->
+        <!--                    <groupId>org.sonatype.plexus</groupId>-->
+        <!--                </exclusion>-->
+        <!--            </exclusions>-->
+        <!--        </dependency>-->
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.github.os72</groupId>
+                <artifactId>protoc-jar-maven-plugin</artifactId>
+                <version>3.10.1</version>
+                <executions>
+                    <execution>
+                        <id>proto-compile</id>
+                        <phase>generate-sources</phase>
+                        <!-- 声明绑定到maven的compile阶段 -->
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+
+                        <configuration>
+                            <inputDirectories>
+                                <include>${project.basedir}/src/main/scala</include>
+                            </inputDirectories>
+                            <outputTargets>
+                                <outputTarget>
+                                    <type>java</type>
+                                    <addSources>main</addSources>
+                                    <outputDirectory>
+                                        ${project.basedir}/target/generated-sources/protobuf
+                                    </outputDirectory>
+                                </outputTarget>
+                            </outputTargets>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!-- 该插件用于将Scala代码编译成class文件 -->
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <id>scala-compile</id>
+                        <phase>process-resources</phase>
+                        <!-- 声明绑定到maven的compile阶段 -->
+                        <goals>
+                            <goal>add-source</goal>
+                            <goal>compile</goal>
+                        </goals>
+
+                        <!-- <goals> <goal>compile</goal> <goal>testCompile</goal> </goals> -->
+                        <configuration>
+                            <args>
+                                <arg>-dependencyfile</arg>
+                                <arg>${project.build.directory}/.scala_dependencies</arg>
+                            </args>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass></mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.8</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.4.3</version>
+                <configuration>
+                    <!-- put your configurations here -->
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <minimizeJar>false</minimizeJar>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.google.protobuf:protobuf-java</include>
+                                </includes>
+                            </artifactSet>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
